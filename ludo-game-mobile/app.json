@@ -1,0 +1,17 @@
+{
+  "expo": {
+    "name": "Dice Duel",
+    "slug": "ludo-game-mobile",
+    "version": "1.0.0",
+    "android": {
+      "package": "com.diceduel.app",
+      "permissions": ["INTERNET", "ACCESS_NETWORK_STATE"],
+      "allowBackup": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "dd3fe9a5-7ef7-4ca3-99da-c42ece0b5336"
+      }
+    }
+  }
+}

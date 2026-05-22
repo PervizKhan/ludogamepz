@@ -1,17 +1,16 @@
 import { Platform } from 'react-native';
 import { io, Socket } from 'socket.io-client';
 
-// Change this to your deployed backend URL
 const API_BASE = Platform.select({
-  android: 'http://192.168.59.156:3000/api',
-  ios: 'http://localhost:3000/api',
-  default: 'http://localhost:3000/api',
+  android: 'https://ludogamepz.vercel.app/api',
+  ios: 'https://ludogamepz.vercel.app/api',
+  default: 'https://ludogamepz.vercel.app/api',
 });
 
 const WS_URL = Platform.select({
-  android: 'http://192.168.59.156:3000',
-  ios: 'http://localhost:3000',
-  default: 'http://localhost:3000',
+  android: 'https://ludogamepz.vercel.app',
+  ios: 'https://ludogamepz.vercel.app',
+  default: 'https://ludogamepz.vercel.app',
 });
 
 class WebSocketManager {

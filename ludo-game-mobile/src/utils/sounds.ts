@@ -1,103 +1,54 @@
-import { Audio } from 'expo-av';
+import { Vibration, Platform } from 'react-native';
 
-let diceSound: Audio.Sound | null = null;
-let winSound: Audio.Sound | null = null;
-let loseSound: Audio.Sound | null = null;
-let tickSound: Audio.Sound | null = null;
-let matchFoundSound: Audio.Sound | null = null;
+let audioContext: any = null;
 
-export async function loadSounds() {
-  try {
-    // Using bundled sounds or generated
-    const { sound: dice } = await Audio.Sound.createAsync(
-      require('../assets/sounds/dice.mp3'),
-      { volume: 0.7 }
-    );
-    diceSound = dice;
-
-    const { sound: win } = await Audio.Sound.createAsync(
-      require('../assets/sounds/win.mp3'),
-      { volume: 0.8 }
-    );
-    winSound = win;
-
-    const { sound: lose } = await Audio.Sound.createAsync(
-      require('../assets/sounds/lose.mp3'),
-      { volume: 0.6 }
-    );
-    loseSound = lose;
-
-    const { sound: tick } = await Audio.Sound.createAsync(
-      require('../assets/sounds/tick.mp3'),
-      { volume: 0.4 }
-    );
-    tickSound = tick;
-
-    const { sound: match } = await Audio.Sound.createAsync(
-      require('../assets/sounds/matchfound.mp3'),
-      { volume: 0.8 }
-    );
-    matchFoundSound = match;
-  } catch (e) {
-    console.log('Sounds will use fallback');
+function getAudioContext() {
+  if (Platform.OS === 'web' && !audioContext) {
+    try { audioContext = new (window.AudioContext || (window as any).webkitAudioContext)(); } catch (e) {}
   }
+  return audioContext;
 }
 
-export async function playDiceRoll() {
+function playBeep(frequency: number, duration: number, volume: number = 0.3) {
+  const ctx = getAudioContext();
+  if (!ctx) { Vibration.vibrate(duration); return; }
   try {
-    if (diceSound) {
-      await diceSound.replayAsync();
-    } else {
-      // Fallback: vibrate
-      const { Vibration } = require('react-native');
-      Vibration.vibrate(100);
-    }
-  } catch (e) {}
+    const oscillator = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+    oscillator.connect(gainNode);
+    gainNode.connect(ctx.destination);
+    oscillator.frequency.value = frequency;
+    oscillator.type = 'sine';
+    gainNode.gain.value = volume;
+    oscillator.start(ctx.currentTime);
+    oscillator.stop(ctx.currentTime + duration / 1000);
+  } catch (e) { Vibration.vibrate(duration); }
 }
 
-export async function playWin() {
-  try {
-    if (winSound) await winSound.replayAsync();
-  } catch (e) {}
+export function playDiceRoll() {
+  playBeep(200, 50); setTimeout(() => playBeep(300, 50), 80);
+  setTimeout(() => playBeep(400, 50), 160); setTimeout(() => playBeep(500, 100), 240);
+  Vibration.vibrate([50, 30, 50, 30, 100]);
 }
 
-export async function playLose() {
-  try {
-    if (loseSound) await loseSound.replayAsync();
-  } catch (e) {}
+export function playWin() {
+  playBeep(523, 150, 0.5); setTimeout(() => playBeep(659, 150, 0.5), 150);
+  setTimeout(() => playBeep(784, 300, 0.5), 300);
+  Vibration.vibrate([100, 50, 100, 50, 300]);
 }
 
-export async function playTick() {
-  try {
-    if (tickSound) await tickSound.replayAsync();
-  } catch (e) {}
+export function playLose() {
+  playBeep(400, 200, 0.4); setTimeout(() => playBeep(300, 200, 0.4), 200);
+  setTimeout(() => playBeep(200, 400, 0.4), 400);
+  Vibration.vibrate(200);
 }
 
-export async function playMatchFound() {
-  try {
-    if (matchFoundSound) await matchFoundSound.replayAsync();
-  } catch (e) {}
+export function playTick() { playBeep(1000, 30, 0.2); }
+
+export function playMatchFound() {
+  playBeep(523, 100, 0.5); setTimeout(() => playBeep(659, 100, 0.5), 100);
+  setTimeout(() => playBeep(784, 100, 0.5), 200); setTimeout(() => playBeep(1047, 300, 0.6), 300);
+  Vibration.vibrate([100, 50, 100, 50, 100, 50, 300]);
 }
 
-export async function unloadSounds() {
-  if (diceSound) await diceSound.unloadAsync();
-  if (winSound) await winSound.unloadAsync();
-  if (loseSound) await loseSound.unloadAsync();
-  if (tickSound) await tickSound.unloadAsync();
-  if (matchFoundSound) await matchFoundSound.unloadAsync();
-}
-export function playButtonClick() {
-  try {
-    const ctx = getAudioContext();
-    if (ctx) {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.frequency.value = 800;
-      gain.gain.value = 0.2;
-      osc.start(ctx.currentTime);
-      osc.stop(ctx.currentTime + 0.05);
-    }
-  } catch (e) {}
-}
+export function playButtonClick() { playBeep(800, 30, 0.2); }
