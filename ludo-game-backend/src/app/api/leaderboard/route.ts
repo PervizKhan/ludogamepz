@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { User } from '@/models/User';
+import { connectDB } from '@/lib/db';
 import { Game } from '@/models/Game';
 
 export async function GET(request: NextRequest) {
+  await connectDB();
   const { searchParams } = new URL(request.url);
   const type = searchParams.get('type') || 'daily';
 
@@ -11,7 +12,6 @@ export async function GET(request: NextRequest) {
   else if (type === 'weekly') dateFilter = { createdAt: { $gte: new Date(Date.now() - 604800000) } };
 
   const games = await Game.find({ status: 'completed', ...dateFilter });
-  
   const userStats: any = {};
   games.forEach(g => {
     const aId = g.playerAId, bId = g.playerBId;
@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
   });
 
   const leaderboard = Object.entries(userStats).map(([id, data]: any) => ({
-    id: parseInt(id), username: data.username, wins: data.wins, total_games: data.total,
+    id, username: data.username, wins: data.wins, total_games: data.total,
     total_winnings: data.winnings, win_rate: data.total > 0 ? ((data.wins / data.total) * 100).toFixed(1) : 0
   })).sort((a: any, b: any) => b.total_winnings - a.total_winnings).slice(0, 20);
 

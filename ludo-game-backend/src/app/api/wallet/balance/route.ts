@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { connectDB } from '@/lib/db';
 import { User } from '@/models/User';
 import { Transaction } from '@/models/Transaction';
 import mongoose from 'mongoose';
 
 export async function GET(request: NextRequest) {
+  await connectDB();
   const { searchParams } = new URL(request.url);
   const userId = searchParams.get('userId');
   if (!userId) return NextResponse.json({ success: false, message: 'userId required' }, { status: 400 });
@@ -12,13 +14,8 @@ export async function GET(request: NextRequest) {
   if (mongoose.Types.ObjectId.isValid(userId)) {
     user = await User.findById(userId);
   }
-  if (!user) {
-    user = await User.findOne({ id: parseInt(userId) });
-  }
-  if (!user) {
-    user = await User.findOne({ username: userId });
-  }
-
+  if (!user) user = await User.findOne({ id: parseInt(userId) });
+  if (!user) user = await User.findOne({ username: userId });
   if (!user) return NextResponse.json({ success: false, message: 'User not found' }, { status: 404 });
 
   const transactions = await Transaction.find({ 

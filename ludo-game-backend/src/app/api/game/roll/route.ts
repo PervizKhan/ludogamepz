@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { connectDB } from '@/lib/db';
 import { gameService } from '@/lib/game-service';
 import { Game } from '@/models/Game';
 
 export async function POST(request: NextRequest) {
+  await connectDB();
   try {
     const body = await request.json();
     const { gameId, player } = body;
-    console.log('Roll request:', { gameId, player });
-
     if (!gameId || !player) return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
 
     const game = await gameService.rollDice(gameId, player);
@@ -20,7 +20,6 @@ export async function POST(request: NextRequest) {
       isComplete: game.status === 'completed',
     });
   } catch (error: any) {
-    console.error('Roll error:', error.message);
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 }

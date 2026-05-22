@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { connectDB } from '@/lib/db';
 import { matchmakingService } from '@/lib/matchmaking-service';
 import { User } from '@/models/User';
 
 export async function POST(request: NextRequest) {
+  await connectDB();
   try {
     const body = await request.json();
     const { userId, username, clubId, betAmount } = body;
 
-    console.log('Matchmaking:', { userId, username, clubId, betAmount });
-
-    // Get user's balance
     const user = await User.findById(userId);
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
     if (user.balance < parseInt(betAmount)) {
@@ -36,7 +35,6 @@ export async function POST(request: NextRequest) {
       betAmount: game.betAmount,
     });
   } catch (error: any) {
-    console.error('Matchmaking error:', error.message);
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 }

@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { connectDB } from '@/lib/db';
 import { findUser } from '@/lib/user-utils';
 import { Game } from '@/models/Game';
 
 export async function GET(request: NextRequest) {
+  await connectDB();
   const { searchParams } = new URL(request.url);
   const userId = searchParams.get('userId');
   if (!userId) return NextResponse.json({ success: false, message: 'userId required' }, { status: 400 });
