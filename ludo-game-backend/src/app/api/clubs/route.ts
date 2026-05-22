@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/lib/db';
+import { Club } from '@/models/Club';
 
 export async function GET() {
-  const clubs = db.prepare('SELECT * FROM clubs ORDER BY bet_amount ASC').all();
-  return NextResponse.json({ clubs });
+  const clubs = await Club.find({}).sort({ betAmount: 1 });
+  return NextResponse.json({ clubs: clubs.map(c => ({ id: c._id, name: c.name, code: c.code, bet_amount: c.betAmount, online_players: c.onlinePlayers })) });
 }

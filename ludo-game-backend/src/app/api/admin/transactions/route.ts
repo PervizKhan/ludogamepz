@@ -1,18 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/lib/db';
 import { verifyAdmin } from '@/lib/admin-auth';
+import { Transaction } from '@/models/Transaction';
+import { User } from '@/models/User';
 
 export async function GET(request: NextRequest) {
   const authError = verifyAdmin(request);
   if (authError) return authError;
 
-  const transactions = db.prepare(`
-    SELECT t.*, u.username
-    FROM transactions t
-    LEFT JOIN users u ON t.user_id = u.id
-    ORDER BY t.created_at DESC
-    LIMIT 100
-  `).all();
+  const transactions = await Transaction.find().sort({ createdAt: -1 }).limit(100);
+  const withUsernames = await Promise.all(transactions.map(async t => {
+    const user = await User.findOne({ id: t.userId });
+    return { ...t.toObject(), username: user?.username || 'Unknown' };
+  }));
 
-  return NextResponse.json({ transactions });
+  return NextResponse.json({ transactions: withUsernames });
 }

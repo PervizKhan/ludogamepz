@@ -86,3 +86,18 @@ export async function unloadSounds() {
   if (tickSound) await tickSound.unloadAsync();
   if (matchFoundSound) await matchFoundSound.unloadAsync();
 }
+export function playButtonClick() {
+  try {
+    const ctx = getAudioContext();
+    if (ctx) {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = 800;
+      gain.gain.value = 0.2;
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.05);
+    }
+  } catch (e) {}
+}

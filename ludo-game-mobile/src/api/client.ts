@@ -1,7 +1,7 @@
 import { Platform } from 'react-native';
 import { io, Socket } from 'socket.io-client';
 
-// Android emulator uses 10.0.2.2, iOS simulator uses localhost, web uses localhost
+// Change this to your deployed backend URL
 const API_BASE = Platform.select({
   android: 'http://192.168.59.156:3000/api',
   ios: 'http://localhost:3000/api',
@@ -21,32 +21,13 @@ class WebSocketManager {
 
   connect() {
     if (this.socket?.connected) return;
-
-    this.socket = io(WS_URL, {
-      transports: ['websocket', 'polling'],
-      autoConnect: true,
-      reconnection: true,
-      reconnectionDelay: 3000,
-      reconnectionAttempts: Infinity,
-    });
-
+    this.socket = io(WS_URL, { transports: ['websocket', 'polling'], autoConnect: true, reconnection: true, reconnectionDelay: 3000, reconnectionAttempts: Infinity });
     this.socket.on('connect', () => {
-      console.log('Socket.io connected:', this.socket?.id);
-      this.pendingJoins.forEach(gameId => {
-        this.socket?.emit('join-game', gameId);
-        console.log('Joined pending game:', gameId);
-      });
+      this.pendingJoins.forEach(gameId => { this.socket?.emit('join-game', gameId); });
       this.pendingJoins = [];
     });
-
-    this.socket.on('disconnect', () => {
-      console.log('Socket.io disconnected');
-    });
-
-    this.socket.on('connect_error', (error) => {
-      console.log('Socket.io error:', error.message);
-    });
-
+    this.socket.on('disconnect', () => {});
+    this.socket.on('connect_error', () => {});
     this.socket.onAny((event: string, ...args: any[]) => {
       const listeners = this.listeners.get(event) || [];
       listeners.forEach(cb => cb(...args));
@@ -64,86 +45,30 @@ class WebSocketManager {
     this.listeners.set(event, listeners.filter(cb => cb !== callback));
   }
 
-  emit(event: string, data: any) {
-    if (this.socket?.connected) {
-      this.socket.emit(event, data);
-    }
-  }
-
-  joinGame(gameId: number) {
-    if (this.socket?.connected) {
-      this.socket.emit('join-game', gameId);
-      console.log('Joined game room:', gameId);
-    } else {
-      this.pendingJoins.push(gameId);
-      console.log('Queued game join:', gameId);
-    }
-  }
-
-  leaveGame(gameId: number) {
-    if (this.socket?.connected) {
-      this.socket.emit('leave-game', gameId);
-    }
-    this.pendingJoins = this.pendingJoins.filter(id => id !== gameId);
-  }
-
-  disconnect() {
-    this.socket?.disconnect();
-  }
+  emit(event: string, data: any) { if (this.socket?.connected) this.socket.emit(event, data); }
+  joinGame(gameId: number) { if (this.socket?.connected) this.socket.emit('join-game', gameId); else this.pendingJoins.push(gameId); }
+  leaveGame(gameId: number) { if (this.socket?.connected) this.socket.emit('leave-game', gameId); }
+  disconnect() { this.socket?.disconnect(); }
 }
 
 export const wsManager = new WebSocketManager();
 
 export const api = {
-  async getClubs() {
-    const res = await fetch(`${API_BASE}/clubs`);
-    return res.json();
-  },
-
+  async getClubs() { const r = await fetch(`${API_BASE}/clubs`); return r.json(); },
   async joinMatchmaking(userId: number, username: string, clubId: number, betAmount: number) {
-    const res = await fetch(`${API_BASE}/matchmaking`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId, username, clubId, betAmount }),
-    });
-    return res.json();
+    const r = await fetch(`${API_BASE}/matchmaking`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId, username, clubId, betAmount }) });
+    return r.json();
   },
-
   async rollDice(gameId: number, player: 'A' | 'B') {
-    const res = await fetch(`${API_BASE}/game/roll`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ gameId, player }),
-    });
-    return res.json();
+    const r = await fetch(`${API_BASE}/game/roll`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ gameId, player }) });
+    return r.json();
   },
-
-  async getGameStatus(gameId: number) {
-    const res = await fetch(`${API_BASE}/game/status?gameId=${gameId}`);
-    return res.json();
-  },
-
-  async getWallet(userId: number) {
-    const res = await fetch(`${API_BASE}/wallet/balance?userId=${userId}`);
-    return res.json();
-  },
-
+  async getGameStatus(gameId: number) { const r = await fetch(`${API_BASE}/game/status?gameId=${gameId}`); return r.json(); },
+  async getWallet(userId: number) { const r = await fetch(`${API_BASE}/wallet/balance?userId=${userId}`); return r.json(); },
   async createUser(username: string, phone: string, initialBalance: number = 0) {
-    const res = await fetch(`${API_BASE}/wallet`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, phone, initialBalance }),
-    });
-    return res.json();
+    const r = await fetch(`${API_BASE}/wallet`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, phone, initialBalance }) });
+    return r.json();
   },
-
-  async getLeaderboard(type: string = 'daily') {
-    const res = await fetch(`${API_BASE}/leaderboard?type=${type}`);
-    return res.json();
-  },
-
-  async getPlayerStats(userId: number) {
-    const res = await fetch(`${API_BASE}/player/stats?userId=${userId}`);
-    return res.json();
-  },
+  async getLeaderboard(type: string = 'daily') { const r = await fetch(`${API_BASE}/leaderboard?type=${type}`); return r.json(); },
+  async getPlayerStats(userId: number) { const r = await fetch(`${API_BASE}/player/stats?userId=${userId}`); return r.json(); },
 };

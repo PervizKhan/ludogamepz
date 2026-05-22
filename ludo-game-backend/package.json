@@ -9,9 +9,9 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "better-sqlite3": "^12.10.0",
     "chart.js": "^4.4.7",
     "expo-server-sdk": "^3.14.0",
+    "mongoose": "^9.6.2",
     "next": "16.2.6",
     "nodemailer": "^8.0.7",
     "react": "19.2.4",
@@ -22,7 +22,6 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
-    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^20",
     "@types/nodemailer": "^8.0.0",
     "@types/react": "^19",

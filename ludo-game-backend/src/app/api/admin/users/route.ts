@@ -1,20 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/lib/db';
 import { verifyAdmin } from '@/lib/admin-auth';
+import { User } from '@/models/User';
+import { Game } from '@/models/Game';
 
 export async function GET(request: NextRequest) {
   const authError = verifyAdmin(request);
   if (authError) return authError;
 
-  const users = db.prepare(`
-    SELECT u.*,
-      COUNT(g.id) as total_games,
-      COUNT(CASE WHEN g.winner_id = u.id THEN 1 END) as wins
-    FROM users u
-    LEFT JOIN games g ON (g.player_a_id = u.id OR g.player_b_id = u.id) AND g.status = 'completed'
-    GROUP BY u.id
-    ORDER BY u.created_at DESC
-  `).all();
+  const users = await User.find().sort({ id: 1 });
+  const usersWithStats = await Promise.all(users.map(async u => {
+    const games = await Game.countDocuments({ status: 'completed', $or: [{ playerAId: u.id }, { playerBId: u.id }] });
+    const wins = await Game.countDocuments({ winnerId: u.id, status: 'completed' });
+    return { id: u.id, username: u.username, balance: u.balance, total_games: games, wins, created_at: u.createdAt };
+  }));
 
-  return NextResponse.json({ users });
+  return NextResponse.json({ users: usersWithStats });
 }

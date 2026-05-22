@@ -16,38 +16,28 @@ interface UserContextType {
   logout: () => Promise<void>;
 }
 
-const UserContext = createContext<UserContextType>({
-  user: null, setUser: () => {}, refreshBalance: async () => {}, logout: async () => {},
-});
+const UserContext = createContext<UserContextType>({ user: null, setUser: () => {}, refreshBalance: async () => {}, logout: async () => {} });
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadUser();
-  }, []);
+  useEffect(() => { loadUser(); }, []);
 
   const loadUser = async () => {
     try {
       const saved = await AsyncStorage.getItem('user');
       if (saved) {
         const parsed = JSON.parse(saved);
-        // Verify user still exists on server
-        try {
-          const data = await api.getWallet(parsed.id);
-          if (data.success && data.user) {
-            const updated = { ...parsed, balance: data.user.balance };
-            setUser(updated);
-            await AsyncStorage.setItem('user', JSON.stringify(updated));
-          } else {
-            // User doesn't exist on server, clear local data
-            await AsyncStorage.removeItem('user');
-            setUser(null);
-          }
-        } catch (e) {
-          // Keep local user if server unreachable
-          setUser(parsed);
+        if (parsed.id) {
+          try {
+            const data = await api.getWallet(parsed.id);
+            if (data.success && data.user) {
+              const updated = { id: parsed.id, username: data.user.username, email: parsed.email, balance: data.user.balance };
+              setUser(updated);
+              await AsyncStorage.setItem('user', JSON.stringify(updated));
+            }
+          } catch (e) { setUser(parsed); }
         }
       }
     } catch (e) {}
@@ -55,7 +45,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   };
 
   const refreshBalance = async () => {
-    if (!user) return;
+    if (!user?.id) return;
     try {
       const data = await api.getWallet(user.id);
       if (data.success && data.user) {
@@ -66,20 +56,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     } catch (e) {}
   };
 
-  const logout = async () => {
-    await AsyncStorage.removeItem('user');
-    setUser(null);
-  };
+  const logout = async () => { await AsyncStorage.removeItem('user'); setUser(null); };
 
   if (loading) return null;
-
-  return (
-    <UserContext.Provider value={{ user, setUser, refreshBalance, logout }}>
-      {children}
-    </UserContext.Provider>
-  );
+  return <UserContext.Provider value={{ user, setUser, refreshBalance, logout }}>{children}</UserContext.Provider>;
 }
 
-export function useUser() {
-  return useContext(UserContext);
-}
+export function useUser() { return useContext(UserContext); }

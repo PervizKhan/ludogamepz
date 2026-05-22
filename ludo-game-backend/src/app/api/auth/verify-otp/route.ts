@@ -1,26 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
+import { User } from '@/models/User';
 import { verifyOTP } from '@/lib/mailer';
 
 export async function POST(request: NextRequest) {
   const { email, otp, username, password } = await request.json();
-
   if (!email || !otp || !username || !password) {
     return NextResponse.json({ success: false, message: 'All fields required' }, { status: 400 });
   }
 
   const valid = verifyOTP(email, otp);
-  if (!valid) {
-    return NextResponse.json({ success: false, message: 'Invalid or expired OTP' }, { status: 400 });
-  }
+  if (!valid) return NextResponse.json({ success: false, message: 'Invalid OTP' }, { status: 400 });
 
-  const db = getDb();
-  
-  const result = db.prepare('INSERT INTO users (username, email, password, balance) VALUES (?, ?, ?, ?)')
-    .run(username.trim(), email.trim(), password, 500);
+  const lastUser = await User.findOne().sort({ id: -1 });
+  const newId = (lastUser?.id || 0) + 1;
 
-  const user = db.prepare('SELECT id, username, email, balance FROM users WHERE id = ?')
-    .get(result.lastInsertRowid);
+  const user = await User.create({ 
+    id: newId, 
+    username: username.trim(), 
+    email: email.trim(), 
+    password, 
+    balance: 500 
+  });
 
-  return NextResponse.json({ success: true, user });
+  return NextResponse.json({ 
+    success: true, 
+    user: { id: user.id, username: user.username, email: user.email, balance: user.balance } 
+  });
 }

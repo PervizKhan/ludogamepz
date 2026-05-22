@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, Animated } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { api, wsManager } from '../api/client';
@@ -15,7 +15,7 @@ export default function MatchmakingScreen() {
   const { user } = useUser();
   const { club } = route.params as { club: any };
 
-  const userId = user?.id || 1;
+  const userId = user?.id || '1';
   const username = user?.username || 'Player';
 
   const [dots, setDots] = useState('');
@@ -41,15 +41,15 @@ export default function MatchmakingScreen() {
       playMatchFound();
 
       setGameState({
-        gameId: data.game.id,
-        player: data.game.player_a_name === username ? 'A' : 'B',
+        gameId: data.gameId || data.game?._id || data.game?.id,
+        player: data.game?.player_a_name === username ? 'A' : 'B',
         opponent: data.opponent,
         isBot: data.isBot,
         myRolls: [],
         opponentRolls: [],
         myTotal: 0,
         opponentTotal: 0,
-        currentTurn: data.game?.current_turn || data.currentTurn || 'A',
+        currentTurn: data.currentTurn || data.game?.current_turn || 'A',
         clubId: club.id,
         status: 'playing',
         winner: null,
@@ -75,8 +75,8 @@ export default function MatchmakingScreen() {
           playMatchFound();
 
           setGameState({
-            gameId: result.game.id,
-            player: result.game.player_a_name === username ? 'A' : 'B',
+            gameId: result.gameId || result.game?._id || result.game?.id,
+            player: result.game?.player_a_name === username ? 'A' : 'B',
             opponent: result.opponent,
             isBot: result.isBot,
             myRolls: [],

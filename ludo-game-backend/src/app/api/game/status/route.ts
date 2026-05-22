@@ -1,18 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { gameService } from '@/lib/game-service';
+import { Game } from '@/models/Game';
 
 export async function GET(request: NextRequest) {
-  const gameId = request.nextUrl.searchParams.get('gameId');
+  const { searchParams } = new URL(request.url);
+  const gameId = searchParams.get('gameId');
+  if (!gameId) return NextResponse.json({ error: 'gameId required' }, { status: 400 });
 
-  if (!gameId) {
-    return NextResponse.json({ error: 'Missing gameId' }, { status: 400 });
-  }
+  const game = await Game.findById(gameId);
+  if (!game) return NextResponse.json({ error: 'Game not found' }, { status: 404 });
 
-  const game = gameService.getGame(Number(gameId));
-
-  if (!game) {
-    return NextResponse.json({ error: 'Game not found' }, { status: 404 });
-  }
-
-  return NextResponse.json({ game });
+  return NextResponse.json({ success: true, game: { ...game.toObject(), player_a_rolls: game.playerARolls, player_b_rolls: game.playerBRolls, player_a_total: game.playerATotal, player_b_total: game.playerBTotal, current_turn: game.currentTurn, bet_amount: game.betAmount } });
 }
